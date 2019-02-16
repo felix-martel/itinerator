@@ -1,17 +1,6 @@
-from collections import namedtuple
-import ign_layers as layer
-from owslib.wmts import WebMapTileService
-import format
+from geo.utils import convert
 
-API = "https://wxs.ign.fr/choisirgeoportail/geoportail/wmts"
-
-wmts = WebMapTileService(API)
-MSET = "PM"
-DEFAULT_ZOOM = 14
-TILE_SIZE = 256
-
-
-
+DEFAULT = 14
 
 class Zoom(object):
     def __init__(self, level, res, geo_res, scale):
@@ -21,8 +10,8 @@ class Zoom(object):
         a, b = scale.split(":")
         self.scale = int(a) / int(b)
 
-    def rescale(self, value, from_unit, to="km"):
-        return convert(value / self.scale, from_unit, to)
+    def rescale(self, *args, unit="cm", to="km"):
+        return convert(*[arg / self.scale for arg in args], from_unit=unit, to_unit=to)
 
 zoom = [
     Zoom(0, 156543.0339280410,   1.40625, "1:559082264"),
