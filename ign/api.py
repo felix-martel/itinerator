@@ -75,15 +75,20 @@ def reverse_coords(col, row, level):
 
     return x, y
 
-def get_tile(col, row, layer, level):
+def get_tile(col, row, layer, level, strict=False):
     url = API + query(layer=layer, level=level, col=col, row=row)
     response = requests.get(url)
     try:
         bin_im = io.BytesIO(response.content)
         return Image.open(bin_im)
     except OSError as e:
-        print(col, row, layer, level)
-        print(url)
+        print("Loading tile ({col}, {row}) for level {lvl} failed:".format(col=col, row=row, lvl=level))
         print(response.text)
-        raise e
+        print("\nTry clicking the following link:")
+        print(url)
+        if strict:
+            raise e
+        else:
+            imsize, _ = tile_attributes(level)
+            return Image.new("RGB", (imsize, imsize))
 
