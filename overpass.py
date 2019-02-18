@@ -1,6 +1,7 @@
 from xml.etree import ElementTree as ET
 import requests
 
+import geo
 from geo import Point
 
 OVERPASS_ENDPOINT = "http://www.overpass-api.de/api/xapi?node[bbox={w:.4f},{s:.4f},{e:.4f},{n:.4f}][place={place}]"
@@ -57,10 +58,31 @@ def build_query(bbox, place="village"):
 
 def get_places(bbox):
     data = []
-    for ptype in ["village", "town", "suburb", "city"]:
+    types = ["village", "town", "city"] # ["village", "town", "suburb", "city"]
+    for ptype in types:
         d = build_query(bbox, place=ptype)
         for locality in d:
             locality["type"] = ptype
             locality["dept"] = locality["zipcode"][:2]
         data = data + d
     return data
+
+def rank(city, func):
+    score = func(city)
+    return score, city["dept"], city["name"]
+
+def _significance(city):
+    pop = 0
+    t = -1
+    if "population" in city:
+        pop = city["population"]
+    if "type" in city:
+        t = ["hamlet", "village", "suburb", "town", "city"].index(city["type"])
+    return t, pop
+
+def rank_by_significance(city):
+    return rank(city, func=_significance)
+
+def rank_by_distance(city, ref):
+    dist = lambda city: geo.Point.distance(ref, city["pos"])
+    return rank(city, func=dist)
