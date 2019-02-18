@@ -10,7 +10,6 @@ import overpass
 from collections import namedtuple
 import matplotlib.pyplot as plt
 import utils
-from collections import Counter
 
 
 City = namedtuple("City", ["name", "dept"])
@@ -31,6 +30,15 @@ class TrackSegment:
         self.coords = coords
         self._name = name
         self._descr = descr
+
+        # Unitialized vars
+        self.profile = None
+        self.distance = None
+        self.dpos = None
+        self.dneg = None
+        self.altmin = None
+        self.altmax = None
+        self.main_city, self.from_city, self.to_city = None, None, None
 
     def process(self, path):
         # Compute distance
@@ -100,7 +108,7 @@ class TrackSegment:
 
         main_ = City(main_city, main_city_dept)
         from_ = City(from_city, from_dept)
-        to_   = City(to_city, to_dept)
+        to_ = City(to_city, to_dept)
         return main_, from_, to_
 
     def cum_distance(self, path, step=10):
@@ -361,13 +369,6 @@ class TrackSegment:
         return image
 
 
-    #def refine_coords(self, target_dim):
-
-    #def get(self, layer=ign.layer.DEFAULT, level=ign.DEFAULT_ZOOM, mset=ign.MSET):
-
-    #def save(self, fname, **kwargs):
-
-
 class TrackSegmentSet:
     def __init__(self, segments, path, format, zoom, margin):
         self.segments = segments
@@ -411,7 +412,7 @@ class TrackSegmentSet:
         bbox = box.expand_to((w, h))
         return bbox, raw_bbox, start, curr
 
-    def load(self, dir = "./maps/", border=20, layer=ign.layers.DEFAULT, dpi=None):
+    def load(self, dir="./maps/", border=20, layer=ign.layers.DEFAULT, dpi=None):
         if dpi is not None:
             self.format.dpi = dpi
         elif self.format.dpi is None:
