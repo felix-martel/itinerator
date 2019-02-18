@@ -9,7 +9,7 @@ def to_inch(*args):
     return tuple([arg / in_to_cm for arg in args])
 
 class Format:
-    def __init__(self, cm=None, inch=None, name=None):
+    def __init__(self, cm=None, inch=None, name=None, dpi=None):
         if inch is not None:
             self.w, self.h = inch
             format = "{}x{}in".format(self.w, self.h)
@@ -17,7 +17,11 @@ class Format:
             self.w, self.h = to_inch(*cm)
             format = "{}x{}cm".format(*cm)
         self.name = format if name is None else name
+        self.dpi = dpi
 
+    def __call__(self, *args, **kwargs):
+        dpi = args[0]
+        return Format(inch=(self.w, self.h), name=self.name, dpi=dpi)
 
     @property
     def aspect_ratio(self):
@@ -30,6 +34,10 @@ class Format:
     @property
     def inch(self):
         return self.w, self.h
+
+    @property
+    def px(self):
+        return floor(self.dpi * self.w), floor(self.dpi * self.h)
 
     def to_px(self, dpi):
         return floor(dpi * self.w), floor(dpi * self.h)
