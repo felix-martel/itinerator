@@ -184,27 +184,25 @@ class TrackSegment:
     def __str__(self):
         return "{t.name}\n--\n{t.descr}\n".format(t=self)
 
-    def find_coords(self, path, border, level, format):
-        c0, r0 = ign.api.get_coords(path[self.start], level)
-        c1, r1 = ign.api.get_coords(path[self.end], level)
+    def find_coords(self, shape, level):
+        c0, r0 = ign.api.get_coords(self.box.northwest, level)
+        c1, r1 = ign.api.get_coords(self.box.southeast, level)
         mat = ign.api.tile_matrix(level)
         tile_height, tile_width = mat.tileheight, mat.tilewidth
 
         width = tile_width * (c1 - c0)
         height = tile_height * (r1 - r0)
-        target_width, target_height = format.px
-        target_width -= 2 * border
-        target_height -= 2 * border
+        target_width, target_height = shape
         if width > height:
             target_height, target_width = target_width, target_height
         if target_height > height:
-            dc = math.ceil((target_height - height) / (2 * tile_height))
-            c0 -= dc
-            c1 += dc
-        if target_width > width:
-            dr = math.ceil((target_width - width) / (2 * tile_width))
+            dr = math.ceil((target_height - height) / (2 * tile_height))
             r0 -= dr
             r1 += dr
+        if target_width > width:
+            dc = math.ceil((target_width - width) / (2 * tile_width))
+            c0 -= dc
+            c1 += dc
         self.coords = (c0, r0, c1, r1)
         return c0, r0, c1, r1
 
@@ -220,7 +218,7 @@ class TrackSegment:
             for colnum, col in enumerate(range(c0, c1 + 1)):
                 im = ign.api.get_tile(col, row, layer, level)
                 tile.paste(im=im, box=(colnum * tile_width, rownum * tile_height))
-            print("Row {} done.".format(rownum))
+            #print("Row {} done.".format(rownum))
         return tile
 
     def build_legend(self, size, dpi, max_diff=1000):
@@ -329,14 +327,15 @@ class TrackSegment:
         return best_corner
 
     def load(self, path, dir, border, layer, level, format):
+        # TODO : load should take a shape argument (in px) and a border argument, and Track should handle the conversion paper size <-> pixel size
         w, h = format.px
-        w = w - border
-        h = h - border
+        w = w - 2*border
+        h = h - 2*border
         lw = math.floor(w * (960/1832))
         lh = math.floor(lw * (5 / 12))
 
         # Load tile
-        self.find_coords(path, border, level, format)
+        self.find_coords((w, h), level)
         tile = self.load_tile(layer, level)
 
         # Draw track and ticks
