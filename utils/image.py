@@ -10,7 +10,9 @@ def crop(im, size=None):
     else:
         w, h = size
         width, height = im.size
-
+        if width > height:
+            h, w = w, h
+        # print("Cropping from {} to {}".format(im.size, (w, h)))
         dh = math.floor((height - h) / 2)
         dw = math.floor((width - w) / 2)
 
