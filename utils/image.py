@@ -14,8 +14,7 @@ def crop(im, size=None):
         dh = math.floor((height - h) / 2)
         dw = math.floor((width - w) / 2)
 
-        im.crop((dw, dh, width - dw, height - dh)),
-        return im
+        return im.crop((dw, dh, width - dw, height - dh))
 
 def add_border(im, border=None, color="white"):
     if border is None:
