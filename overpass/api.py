@@ -1,8 +1,11 @@
+from collections import namedtuple
 from xml.etree import ElementTree as ET
 import requests
 
 import geo
 from geo import Point
+
+City = namedtuple("City", ["name", "dept"])
 
 OVERPASS_ENDPOINT = "http://www.overpass-api.de/api/xapi?node[bbox={w:.4f},{s:.4f},{e:.4f},{n:.4f}][place={place}]"
 

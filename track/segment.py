@@ -1,19 +1,16 @@
 import io
 import math
-from PIL import Image
 import os
-import kml
+
+from PIL import Image
+from matplotlib import pyplot as plt
+
 import geo
 import ign
-import format
-import overpass
-from collections import namedtuple
-import matplotlib.pyplot as plt
+from utils import kml
 import utils
-
-
-City = namedtuple("City", ["name", "dept"])
-
+import overpass
+from overpass.api import City
 
 class TrackSegment:
     current = 0
@@ -95,16 +92,16 @@ class TrackSegment:
 
     def get_cities(self, path):
         """Find all cities within bounding box"""
-        cities = overpass.get_places(self.box.expand(1, 1))
+        cities = overpass.api.get_places(self.box.expand(1, 1))
         if not cities:
             unk = "unknown"
             return City(unk, "00"), City(unk, "00"), City(unk, "00")
         starting_point = path[self.start]
         ending_point = path[self.end]
 
-        _, main_city_dept, main_city = max([overpass.rank_by_significance(city) for city in cities])
-        _, from_dept, from_city = min([overpass.rank_by_distance(city, starting_point) for city in cities])
-        _, to_dept, to_city = min([overpass.rank_by_distance(city, ending_point) for city in cities])
+        _, main_city_dept, main_city = max([overpass.api.rank_by_significance(city) for city in cities])
+        _, from_dept, from_city = min([overpass.api.rank_by_distance(city, starting_point) for city in cities])
+        _, to_dept, to_city = min([overpass.api.rank_by_distance(city, ending_point) for city in cities])
 
         main_ = City(main_city, main_city_dept)
         from_ = City(from_city, from_dept)
@@ -227,7 +224,6 @@ class TrackSegment:
         return tile
 
     def build_legend(self, size, dpi, max_diff=1000):
-        print(size, dpi)
         w_in = size[0] / dpi
         h_in = size[1] / dpi
         x, z = self.profile
@@ -329,10 +325,7 @@ class TrackSegment:
                 if is_in(point, corner):
                     hidden_points[corner] += 1
 
-        for corner, n_hidden in hidden_points.items():
-            print(corner, n_hidden)
         _, best_corner = min([(n_hidden, corner) for corner, n_hidden in hidden_points.items()])
-        print(best_corner)
         return best_corner
 
     def load(self, path, dir, border, layer, level, format):
@@ -367,80 +360,3 @@ class TrackSegment:
         image.save(dir + self.encoded_name + ".jpg")
 
         return image
-
-
-class TrackSegmentSet:
-    def __init__(self, segments, path, format, zoom, margin):
-        self.segments = segments
-        self.zoom = zoom
-        self.path = path
-        self.format = format
-        self.margin = margin
-        self.name = ""
-        self.descr = ""
-
-    @classmethod
-    def from_path(cls, path, format=format.A4, zoom=ign.zoom.DEFAULT, margin=0.5, verbose=False):
-        curr = 0
-        segments = []
-        while curr < len(path):
-            bbox, raw_bbox, start, curr = cls.segmentize(path, curr, format, zoom, margin)
-            end = min(curr, len(path) - 1)
-            segment_id = len(segments)
-            # Find mercator coords here
-            ts = TrackSegment(bbox, start=start, end=end, sid=segment_id, raw_bbox=raw_bbox)
-            ts.process(path)
-            if verbose:
-                print(ts)
-            segments.append(ts)
-
-        return cls(segments, path, format, zoom, margin)
-
-    @classmethod
-    def segmentize(cls, path, start, format, zoom, margin):
-        w, h = format.cm
-        w, h, m = ign.levels[zoom].rescale(w, h, margin, unit="cm", to="km")
-
-        curr = start
-        box = geo.Bbox()
-        b_max, b_min = max(w, h) - m, min(w, h) - m
-        while curr < len(path) and (box & path[curr]) < (b_max, b_min):
-            box.add(path[curr])
-            curr += 1
-
-        raw_bbox = box
-        bbox = box.expand_to((w, h))
-        return bbox, raw_bbox, start, curr
-
-    def load(self, dir="./maps/", border=20, layer=ign.layers.DEFAULT, dpi=None):
-        if dpi is not None:
-            self.format.dpi = dpi
-        elif self.format.dpi is None:
-            self.format.dpi = 72
-
-        for segment in self.segments:
-            segment.load(self.path, dir, border, layer, self.zoom, self.format)
-
-    def save_to_kml(self, fname):
-        shapes = [segment.to_kml() for segment in self]
-        k = kml.document(self.name, self.descr, shapes)
-        with open(fname, "w") as f:
-            f.write(k.to_string())
-
-    def save(self, fname):
-        # TODO : add support for serialization
-        pass
-
-    def open(self, fname):
-        # TODO : add support for deserialization
-        pass
-
-    def __getitem__(self, item):
-        return self.segments[item]
-
-    def __iter__(self):
-        for segment in self.segments:
-            yield segment
-
-    def __len__(self):
-        return len(self.segments)
