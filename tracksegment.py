@@ -411,11 +411,14 @@ class TrackSegmentSet:
         bbox = box.expand_to((w, h))
         return bbox, raw_bbox, start, curr
 
-    def load(self, dpi=None):
+    def load(self, dir = "./maps/", border=20, layer=ign.layers.DEFAULT, dpi=None):
         if dpi is not None:
             self.format.dpi = dpi
         elif self.format.dpi is None:
             self.format.dpi = 72
+
+        for segment in self.segments:
+            segment.load(self.path, dir, border, layer, self.zoom, self.format)
 
     def save(self, fname):
         shapes = [segment.to_kml() for segment in self]
