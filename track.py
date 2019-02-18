@@ -6,13 +6,15 @@ import format
 
 fname = "../parcours_439080.kml"
 
-path, name = kml.read_track(fname, max_points=5000)
+path, name = kml.read_track(fname, max_points=2000)
 print(name, "loaded,", len(path), "points found")
 
-tss = TrackSegmentSet.from_path(path)
+f = format.A4(150)
+print("Target size", f.px)
+tss = TrackSegmentSet.from_path(path, verbose=True, format=f)
 
-print("Track divided in", len(tss), "segments.")
+print("\nTrack divided in", len(tss), "segments.")
 
-
-print(tss[0].name)
-print(tss[0].descr)
+ts = tss[0]
+im = ts.load(tss.path, "./map/", border=20, layer=ign.layers.DEFAULT, level=ign.zoom.DEFAULT, format=f)
+print(im.size)
