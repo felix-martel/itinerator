@@ -420,11 +420,19 @@ class TrackSegmentSet:
         for segment in self.segments:
             segment.load(self.path, dir, border, layer, self.zoom, self.format)
 
-    def save(self, fname):
+    def save_to_kml(self, fname):
         shapes = [segment.to_kml() for segment in self]
         k = kml.document(self.name, self.descr, shapes)
         with open(fname, "w") as f:
             f.write(k.to_string())
+
+    def save(self, fname):
+        # TODO : add support for serialization
+        pass
+
+    def open(self, fname):
+        # TODO : add support for deserialization
+        pass
 
     def __getitem__(self, item):
         return self.segments[item]
